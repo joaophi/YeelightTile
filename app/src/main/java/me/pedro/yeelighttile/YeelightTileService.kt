@@ -10,12 +10,17 @@ import java.net.InetAddress
 
 private fun reachableFlow(timeout: Int = 1_000): Flow<Boolean> = flow {
     val address = InetAddress.getByName("luz-mesa")
-    while (currentCoroutineContext().isActive)
+    while (currentCoroutineContext().isActive) {
         emit(address.isReachable(timeout))
-}.retryWhen { _, _ -> emit(false);true }.distinctUntilChanged()
+        delay(timeout.toLong())
+    }
+}.retryWhen { _, _ ->
+    emit(false)
+    delay(timeout.toLong())
+    true
+}.distinctUntilChanged()
 
 class YeelightTileService : TileService() {
-
     private lateinit var scope: CoroutineScope
     private lateinit var yeelight: YeelightDevice
 
@@ -36,7 +41,11 @@ class YeelightTileService : TileService() {
                     emitAll(yeelight.properties.filter(Property.Power))
                 }
             }
-            .retry()
+            .retryWhen { _, _ ->
+                emit(null)
+                delay(1000)
+                true
+            }
             .distinctUntilChanged()
             .map { state ->
                 when (state) {
