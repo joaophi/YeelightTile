@@ -2,10 +2,12 @@ package me.pedro.yeelighttile
 
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
+import com.github.joaophi.yeelight.Command
+import com.github.joaophi.yeelight.Property
+import com.github.joaophi.yeelight.YeelightDevice
+import com.github.joaophi.yeelight.filter
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import me.pedro.yeelighttile.yeelight.*
-import me.pedro.yeelighttile.yeelight.Command.GetProp.Property
 import java.net.InetAddress
 
 private fun reachableFlow(timeout: Int = 1_000): Flow<Boolean> = flow {
@@ -24,15 +26,23 @@ class YeelightTileService : TileService() {
     private lateinit var scope: CoroutineScope
     private lateinit var yeelight: YeelightDevice
 
+    private fun updateState(state: Boolean?) {
+        qsTile.state = when (state) {
+            true -> Tile.STATE_ACTIVE
+            false -> Tile.STATE_INACTIVE
+            null -> Tile.STATE_UNAVAILABLE
+        }
+        qsTile.updateTile()
+    }
+
     override fun onStartListening() {
         super.onStartListening()
+        updateState(state = null)
         scope = CoroutineScope(Dispatchers.IO)
         reachableFlow()
             .transformLatest { reachable ->
-                if (!reachable) {
-                    emit(null)
-                    return@transformLatest
-                }
+                emit(null)
+                if (!reachable) return@transformLatest
 
                 yeelight = YeelightDevice(host = "luz-mesa")
                 yeelight.use {
@@ -47,39 +57,23 @@ class YeelightTileService : TileService() {
                 true
             }
             .distinctUntilChanged()
-            .map { state ->
-                when (state) {
-                    true -> Tile.STATE_ACTIVE
-                    false -> Tile.STATE_INACTIVE
-                    null -> Tile.STATE_UNAVAILABLE
-                }
-            }
-            .onEach {
-                qsTile.state = it
-                qsTile.updateTile()
-            }
+            .onEach(::updateState)
             .launchIn(scope)
     }
 
     override fun onClick() {
         super.onClick()
-        scope.launch {
-            if (!::yeelight.isInitialized) return@launch
-
+        if (::yeelight.isInitialized) scope.launch {
             yeelight.sendCommand(Command.Toggle)
             val result = yeelight.sendCommand(Command.GetProp(Property.Power))
-            val state = when (result[Property.Power]) {
-                true -> Tile.STATE_ACTIVE
-                false -> Tile.STATE_INACTIVE
-                null -> return@launch
-            }
-            qsTile.state = state
-            qsTile.updateTile()
+
+            updateState(state = result[Property.Power] ?: return@launch)
         }
     }
 
     override fun onStopListening() {
         super.onStopListening()
         scope.cancel()
+        updateState(state = null)
     }
 }
