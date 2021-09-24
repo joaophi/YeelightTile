@@ -10,15 +10,17 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import java.net.InetAddress
 
-private fun reachableFlow(timeout: Int = 1_000): Flow<Boolean> = flow {
-    val address = InetAddress.getByName("luz-mesa")
+private const val HOSTNAME = "yeelink-light-strip1_miio77093229"
+
+private fun reachableFlow(timeout: Long = 1_000): Flow<Boolean> = flow {
+    val address = InetAddress.getByName(HOSTNAME)
     while (currentCoroutineContext().isActive) {
-        emit(address.isReachable(timeout))
-        delay(timeout.toLong())
+        emit(address.isReachable(timeout.toInt()))
+        delay(timeout)
     }
 }.retryWhen { _, _ ->
     emit(false)
-    delay(timeout.toLong())
+    delay(timeout)
     true
 }.distinctUntilChanged()
 
@@ -44,7 +46,7 @@ class YeelightTileService : TileService() {
                 emit(null)
                 if (!reachable) return@transformLatest
 
-                yeelight = YeelightDevice(host = "luz-mesa")
+                yeelight = YeelightDevice(HOSTNAME)
                 yeelight.use {
                     val result = yeelight.sendCommand(Command.GetProp(Property.Power))
                     emit(result[Property.Power])
@@ -53,7 +55,7 @@ class YeelightTileService : TileService() {
             }
             .retryWhen { _, _ ->
                 emit(null)
-                delay(1000)
+                delay(1_000)
                 true
             }
             .distinctUntilChanged()
