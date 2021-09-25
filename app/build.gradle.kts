@@ -38,14 +38,10 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.2")
 
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.3.1")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.4.0-beta01")
 
-    implementation("com.tinder.scarlet:scarlet:0.1.12")
-    implementation("com.tinder.scarlet:websocket-okhttp:0.1.12")
-    implementation("com.tinder.scarlet:lifecycle-android:0.1.12")
-    implementation("com.tinder.scarlet:stream-adapter-coroutines:0.1.12")
-    implementation("com.tinder.scarlet:message-adapter-moshi:0.1.12")
+    implementation("com.squareup.okhttp3:okhttp:4.9.1")
 
-    implementation("com.squareup.moshi:moshi-kotlin:1.12.0")
+    implementation("com.squareup.moshi:moshi:1.12.0")
     kapt("com.squareup.moshi:moshi-kotlin-codegen:1.12.0")
 }

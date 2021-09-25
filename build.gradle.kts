@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 buildscript {
     repositories {
         google()
@@ -11,6 +13,12 @@ buildscript {
 }
 
 allprojects {
+    tasks.withType<KotlinCompile> {
+        kotlinOptions.freeCompilerArgs += "-Xopt-in=" +
+                "kotlin.ExperimentalStdlibApi," +
+                "kotlinx.coroutines.ExperimentalCoroutinesApi"
+    }
+
     repositories {
         google()
         mavenCentral()
